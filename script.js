@@ -1,25 +1,35 @@
 // script.js
-document.getElementById('excel-file').addEventListener('change', function (event) {
-  const file = event.target.files[0];
-  if (!file) return;
 
-  const reader = new FileReader();
-  reader.onload = function (e) {
-    const data = new Uint8Array(e.target.result);
-    const workbook = XLSX.read(data, { type: 'array' });
+document.addEventListener('DOMContentLoaded', function () {
+  // Path to the existing Excel file
+  const filePath = 'data/example.xlsx';
 
-    // Assuming the first sheet contains the data
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
+  // Fetch the file
+  fetch(filePath)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Error loading file: ${response.statusText}`);
+      }
+      return response.arrayBuffer();
+    })
+    .then(data => {
+      // Parse the Excel file using SheetJS
+      const workbook = XLSX.read(data, { type: 'array' });
 
-    // Convert worksheet to JSON
-    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      // Assuming the first sheet contains the data
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
 
-    // Render the data as a table
-    renderTable(jsonData);
-  };
+      // Convert worksheet to JSON
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-  reader.readAsArrayBuffer(file);
+      // Render the data as a table
+      renderTable(jsonData);
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      document.getElementById('output').textContent = 'Failed to load data.';
+    });
 });
 
 function renderTable(data) {
@@ -27,7 +37,7 @@ function renderTable(data) {
   outputDiv.innerHTML = ''; // Clear previous content
 
   if (data.length === 0) {
-    outputDiv.textContent = 'No data found in the uploaded file.';
+    outputDiv.textContent = 'No data found in the file.';
     return;
   }
 
